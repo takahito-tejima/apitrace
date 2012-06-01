@@ -155,6 +155,22 @@ namespace trace {
         contains(const trace::Call &call) {
             return contains(call.no, call.flags);
         }
+
+        inline CallNo
+        max() const {
+            CallNo max = 0;
+
+            if (!empty()) {
+                RangeList::const_iterator it;
+                for (it = ranges.begin(); it != ranges.end(); ++it) {
+                    if (max < it->stop) {
+                        max = it->stop;
+                    }
+                }
+            }
+
+            return max;
+        }
     };
 
 

@@ -128,6 +128,15 @@ mainLoop() {
     startTime = os::getTime();
     trace::Call *call;
 
+    unsigned lastCallNo = ~0;
+
+    if (!snapshotFrequency.empty()) {
+        lastCallNo = snapshotFrequency.max();
+    }
+    if (dumpStateCallNo < lastCallNo) {
+        lastCallNo = dumpStateCallNo;
+    }
+
     while ((call = retrace::parser.parse_call())) {
         bool swapRenderTarget = call->flags & trace::CALL_FLAG_SWAP_RENDERTARGET;
         bool doSnapshot =
@@ -155,8 +164,8 @@ mainLoop() {
             takeSnapshot(call->no);
         }
 
-        if (call->no >= dumpStateCallNo &&
-            dumpState(std::cout)) {
+        if (call->no >= lastCallNo  &&
+           (doSnapshot || dumpState(std::cout))) {
             exit(0);
         }
 
