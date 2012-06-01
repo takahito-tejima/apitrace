@@ -107,6 +107,7 @@ private:
     ApiTraceFrame *currentFrame() const;
     ApiTraceCall *currentCall() const;
 
+    static void thumbnailCallback(void *object, int thumbnailIdx);
 
 private:
     Ui_MainWindow m_ui;

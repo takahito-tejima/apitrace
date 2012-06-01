@@ -35,6 +35,9 @@ public:
     bool captureThumbnails() const;
     void setCaptureThumbnails(bool enable);
 
+    void addThumbnailToCapture(qlonglong num);
+    void resetThumbnailsToCapture();
+
 signals:
     void finished(const QString &output);
     void foundState(ApiTraceState *state);
@@ -55,6 +58,8 @@ private:
     qlonglong m_captureCall;
 
     QProcessEnvironment m_processEnvironment;
+
+    QList<qlonglong> m_thumbnailsToCapture;
 };
 
 #endif
