@@ -232,6 +232,8 @@ public:
     void setThumbnail(const QImage & thumbnail);
     const QImage & thumbnail() const;
 
+    virtual void missingThumbnail() = 0;
+
 protected:
     int m_type : 4;
     mutable bool m_hasBinaryData;
@@ -284,6 +286,8 @@ public:
     int numChildren() const;
     bool hasBinaryData() const;
     int binaryDataIndex() const;
+
+    void missingThumbnail();
 private:
     int m_index;
     ApiTraceCallSignature *m_signature;
@@ -342,6 +346,7 @@ public:
     void setLastCallIndex(unsigned index);
     unsigned lastCallIndex() const;
 
+    void missingThumbnail();
 private:
     ApiTrace *m_parentTrace;
     quint64 m_binaryDataSize;
