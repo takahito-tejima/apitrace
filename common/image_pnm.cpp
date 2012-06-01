@@ -110,7 +110,7 @@ Image::writePNM(std::ostream &os, const char *comment) const {
 }
 
 const char *
-readPNMHeader(const char *buffer, size_t bufferSize, unsigned *channels, unsigned *width, unsigned *height)
+readPNMHeader(const char *buffer, size_t bufferSize, unsigned *channels, unsigned *width, unsigned *height, int *commentNumber)
 {
     *channels = 0;
     *width = 0;
@@ -135,6 +135,16 @@ readPNMHeader(const char *buffer, size_t bufferSize, unsigned *channels, unsigne
 
     // skip over optional comment
     if (*currentBuffer == '#') {
+        // advance past '#'
+        currentBuffer += 1;
+        bufferSize += 1;
+
+        // actually try to read a number
+        if (commentNumber != NULL) {
+            *commentNumber = -1; // initialize it to something sensible
+            sscanf(currentBuffer, "%d", commentNumber);
+        }
+
         // advance past comment line
         nextBuffer = (const char *) memchr((const void *) currentBuffer, '\n', bufferSize) + 1;
         bufferSize -= nextBuffer - currentBuffer;

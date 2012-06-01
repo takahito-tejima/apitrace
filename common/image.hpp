@@ -109,7 +109,7 @@ Image *
 readPNG(const char *filename);
 
 const char *
-readPNMHeader(const char *buffer, size_t size, unsigned *channels, unsigned *width, unsigned *height);
+readPNMHeader(const char *buffer, size_t size, unsigned *channels, unsigned *width, unsigned *height, int *commentNumber);
 
 } /* namespace image */
 

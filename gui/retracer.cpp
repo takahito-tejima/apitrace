@@ -301,7 +301,7 @@ void Retracer::run()
      * Process standard output
      */
 
-    QList<QImage> thumbnails;
+    ImageHash thumbnails;
     QVariantMap parsedJson;
 
     process.setReadChannel(QProcess::StandardOutput);
@@ -357,7 +357,8 @@ void Retracer::run()
                     headerSize += headerRead;
                 }
 
-                const char *headerEnd = image::readPNMHeader(header, headerSize, &channels, &width, &height);
+                int callIdx = -1;
+                const char *headerEnd = image::readPNMHeader(header, headerSize, &channels, &width, &height, &callIdx);
 
                 // if invalid PNM header was encountered, ...
                 if (header == headerEnd) {
@@ -377,7 +378,7 @@ void Retracer::run()
                 }
 
                 QImage thumb = thumbnail(snapshot);
-                thumbnails.append(thumb);
+                thumbnails.insert(callIdx, thumb);
             }
 
             Q_ASSERT(process.state() != QProcess::Running);

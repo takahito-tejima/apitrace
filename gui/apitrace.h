@@ -13,6 +13,7 @@ class SaverThread;
 class QThread;
 
 typedef void (*ThumbnailCallback)(void *object, int thumbnailIdx);
+typedef QHash<int, QImage> ImageHash;
 
 class ApiTrace : public QObject
 {
@@ -104,7 +105,7 @@ public slots:
     void findCallIndex(int index);
     void setCallError(const ApiTraceError &error);
 
-    void bindThumbnailsToFrames(const QList<QImage> &thumbnails);
+    void bindThumbnails(const ImageHash &thumbnails);
 
 signals:
     void loadTrace(const QString &name);
@@ -172,6 +173,8 @@ private:
     QSet<ApiTraceFrame*> m_loadingFrames;
 
     QSet<int> m_missingThumbnails;
+
+    ImageHash m_thumbnails;
 };
 
 #endif

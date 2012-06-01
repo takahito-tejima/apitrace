@@ -51,7 +51,7 @@ private slots:
     void replayStop();
     void replayFinished(const QString &message);
     void replayStateFound(ApiTraceState *state);
-    void replayThumbnailsFound(const QList<QImage> &thumbnails);
+    void replayThumbnailsFound(const ImageHash &thumbnails);
     void replayError(const QString &msg);
     void startedLoadingTrace();
     void loadProgess(int percent);
