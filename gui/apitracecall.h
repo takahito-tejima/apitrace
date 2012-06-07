@@ -288,6 +288,8 @@ public:
     int binaryDataIndex() const;
 
     void missingThumbnail();
+
+    bool isDrawCall() const;
 private:
     int m_index;
     ApiTraceCallSignature *m_signature;
