@@ -133,9 +133,6 @@ mainLoop() {
     if (!snapshotFrequency.empty()) {
         lastCallNo = snapshotFrequency.max();
     }
-    if (dumpStateCallNo < lastCallNo) {
-        lastCallNo = dumpStateCallNo;
-    }
 
     while ((call = retrace::parser.parse_call())) {
         bool swapRenderTarget = call->flags & trace::CALL_FLAG_SWAP_RENDERTARGET;
@@ -164,8 +161,18 @@ mainLoop() {
             takeSnapshot(call->no);
         }
 
-        if (call->no >= lastCallNo  &&
-           (doSnapshot || dumpState(std::cout))) {
+        /*
+         * Dump state.  We might not dump state immediately (e.g, a context
+         * might not be bound), causing dump to be defered until the first
+         * possible call.
+         */
+
+        if (call->no >= dumpStateCallNo &&
+            dumpState(std::cout)) {
+            exit(0);
+        }
+
+        if (call->no >= lastCallNo) {
             exit(0);
         }
 
