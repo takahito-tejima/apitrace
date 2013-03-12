@@ -29,7 +29,7 @@
 
 
 from gltrace import GlTracer
-from specs.stdapi import API
+from specs.stdapi import Module, API
 from specs.glapi import glapi
 from specs.glxapi import glxapi
 
@@ -45,17 +45,34 @@ class GlxTracer(GlTracer):
         "glXGetProcAddressARB",
     ]
 
+    createContextFunctionNames = [
+        'glXCreateContext',
+        'glXCreateContextAttribsARB',
+        'glXCreateContextWithConfigSGIX',
+        'glXCreateNewContext',
+    ]
+
+    destroyContextFunctionNames = [
+        'glXDestroyContext',
+    ]
+
+    makeCurrentFunctionNames = [
+        'glXMakeCurrent',
+        'glXMakeContextCurrent',
+        'glXMakeCurrentReadSGI',
+    ]
+
     def traceFunctionImplBody(self, function):
-        if function.name == 'glXDestroyContext':
+        if function.name in self.destroyContextFunctionNames:
             print '    gltrace::releaseContext((uintptr_t)ctx);'
 
         GlTracer.traceFunctionImplBody(self, function)
 
-        if function.name == 'glXCreateContext':
+        if function.name in self.createContextFunctionNames:
             print '    if (_result != NULL)'
             print '        gltrace::createContext((uintptr_t)_result);'
 
-        if function.name == 'glXMakeCurrent':
+        if function.name in self.makeCurrentFunctionNames:
             print '    if (_result) {'
             print '        if (ctx != NULL)'
             print '            gltrace::setContext((uintptr_t)ctx);'
@@ -84,9 +101,11 @@ if __name__ == '__main__':
     print '#include "glsize.hpp"'
     print
 
+    module = Module()
+    module.mergeModule(glxapi)
+    module.mergeModule(glapi)
     api = API()
-    api.addApi(glxapi)
-    api.addApi(glapi)
+    api.addModule(module)
     tracer = GlxTracer()
     tracer.traceApi(api)
 

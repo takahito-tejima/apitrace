@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "trace_file.hpp"
+#include "trace_dump.hpp"
 #include "trace_parser.hpp"
 
 
@@ -176,9 +177,15 @@ Call *Parser::parse_call(Mode mode) {
         int c = read_byte();
         switch (c) {
         case trace::EVENT_ENTER:
+#if TRACE_VERBOSE
+            std::cerr << "\tENTER\n";
+#endif
             parse_enter(mode);
             break;
         case trace::EVENT_LEAVE:
+#if TRACE_VERBOSE
+            std::cerr << "\tLEAVE\n";
+#endif
             call = parse_leave(mode);
             adjust_call_flags(call);
             return call;
@@ -248,9 +255,10 @@ Parser::parse_function_sig(void) {
                 api = trace::API_GL;
             } else if (n[0] == 'e' && n[1] == 'g' && n[2] == 'l' && n[3] >= 'A' && n[3] <= 'Z') { // egl[A-Z]*
                 api = trace::API_EGL;
-            } else if (n[0] == 'D' &&
-                       ((n[1] == 'i' && n[2] == 'r' && n[3] == 'e' && n[4] == 'c' && n[5] == 't') || // Direct*
-                        (n[1] == '3' && n[2] == 'D'))) { // D3D*
+            } else if ((n[0] == 'D' &&
+                        ((n[1] == 'i' && n[2] == 'r' && n[3] == 'e' && n[4] == 'c' && n[5] == 't') || // Direct*
+                         (n[1] == '3' && n[2] == 'D'))) || // D3D*
+                       (n[0] == 'C' && n[1] == 'r' && n[2] == 'e' && n[3] == 'a' && n[4] == 't' && n[5] == 'e')) { // Create*
                 api = trace::API_DX;
             } else {
                 /* TODO */
@@ -465,11 +473,20 @@ bool Parser::parse_call_details(Call *call, Mode mode) {
         int c = read_byte();
         switch (c) {
         case trace::CALL_END:
+#if TRACE_VERBOSE
+            std::cerr << "\tCALL_END\n";
+#endif
             return true;
         case trace::CALL_ARG:
+#if TRACE_VERBOSE
+            std::cerr << "\tCALL_ARG\n";
+#endif
             parse_arg(call, mode);
             break;
         case trace::CALL_RET:
+#if TRACE_VERBOSE
+            std::cerr << "\tCALL_RET\n";
+#endif
             call->ret = parse_value(mode);
             break;
         default:
@@ -569,7 +586,9 @@ Value *Parser::parse_value(void) {
     }
 #if TRACE_VERBOSE
     if (value) {
-        std::cerr << "\tVALUE " << value << "\n";
+        std::cerr << "\tVALUE ";
+        trace::dump(value, std::cerr);
+        std::cerr << "\n";
     }
 #endif
     return value;

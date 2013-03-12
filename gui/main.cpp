@@ -3,6 +3,9 @@
 #include "apitrace.h"
 #include "apitracecall.h"
 
+#include "os_string.hpp"
+#include "os_process.hpp"
+
 #include <QApplication>
 #include <QMetaType>
 #include <QVariant>
@@ -22,6 +25,7 @@ static void usage(void)
 
 int main(int argc, char **argv)
 {
+    QApplication::setGraphicsSystem("raster");
     QApplication app(argc, argv);
 
     qRegisterMetaType<QList<ApiTraceFrame*> >();
@@ -31,6 +35,15 @@ int main(int argc, char **argv)
     qRegisterMetaType<ApiTrace::SearchResult>();
     qRegisterMetaType<ApiTrace::SearchRequest>();
     qRegisterMetaType<ImageHash>();
+
+#ifndef Q_OS_WIN
+    os::String currentProcess = os::getProcessName();
+    currentProcess.trimFilename();
+    QString path = qgetenv("PATH");
+    path = QLatin1String(currentProcess.str()) + QLatin1String(":") + path;
+    qputenv("PATH", path.toLatin1());
+#endif
+
     QStringList args = app.arguments();
 
     int i = 1;

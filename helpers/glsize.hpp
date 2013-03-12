@@ -37,6 +37,8 @@
 
 #include <string.h>
 
+#include <algorithm>
+
 #include "os.hpp"
 #include "glimports.hpp"
 
@@ -299,6 +301,14 @@ _glArrayPointer_size(GLint size, GLenum type, GLsizei stride, GLsizei count)
         return 0;
     }
 
+    if (size == GL_BGRA) {
+        size = 4; 
+    }
+
+    if (size > 4) {
+        os::log("apitrace: warning: %s: unexpected size 0x%04X\n", __FUNCTION__, size);
+    }
+
     size_t elementSize = size*_gl_type_size(type);
     if (!stride) {
         stride = (GLsizei)elementSize;
@@ -319,6 +329,21 @@ _glArrayPointer_size(GLint size, GLenum type, GLsizei stride, GLsizei count)
 #define _glVertexAttribPointerARB_size(size, type, normalized, stride, count) _glArrayPointer_size(size, type, stride, count)
 #define _glVertexAttribPointerNV_size(size, type, stride, count) _glArrayPointer_size(size, type, stride, count)
 
+/**
+ * Same as glGetIntegerv, but passing the result in the return value.
+ */
+static inline GLint
+_glGetInteger(GLenum pname) {
+    GLint param = 0;
+    _glGetIntegerv(pname, &param);
+    return param;
+}
+
+static inline GLint
+_element_array_buffer_binding(void) {
+    return _glGetInteger(GL_ELEMENT_ARRAY_BUFFER_BINDING);
+}
+
 static inline GLuint
 _glDrawArrays_count(GLint first, GLsizei count)
 {
@@ -330,17 +355,21 @@ _glDrawArrays_count(GLint first, GLsizei count)
 
 #define _glDrawArraysEXT_count _glDrawArrays_count
 
+/* Forward declaration for definition in gltrace.py */
+void
+_shadow_glGetBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size,
+                              GLvoid *data);
+
 static inline GLuint
 _glDrawElementsBaseVertex_count(GLsizei count, GLenum type, const GLvoid *indices, GLint basevertex)
 {
     GLvoid *temp = 0;
-    GLint element_array_buffer = 0;
 
     if (!count) {
         return 0;
     }
 
-    _glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &element_array_buffer);
+    GLint element_array_buffer = _element_array_buffer_binding();
     if (element_array_buffer) {
         // Read indices from index buffer object
         GLintptr offset = (GLintptr)indices;
@@ -350,7 +379,7 @@ _glDrawElementsBaseVertex_count(GLsizei count, GLenum type, const GLvoid *indice
             return 0;
         }
         memset(temp, 0, size);
-        _glGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, size, temp);
+        _shadow_glGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, size, temp);
         indices = temp;
     } else {
         if (!indices) {
@@ -429,31 +458,31 @@ _glDrawElementsIndirect_count(GLenum type, const GLvoid *indirect) {
 }
 
 static inline GLuint
-_glMultiDrawArrays_count(const GLint *first, const GLsizei *count, GLsizei primcount) {
+_glMultiDrawArrays_count(const GLint *first, const GLsizei *count, GLsizei drawcount) {
     GLuint _count = 0;
-    for (GLsizei prim = 0; prim < primcount; ++prim) {
-        GLuint _count_prim = _glDrawArrays_count(first[prim], count[prim]);
-        _count = std::max(_count, _count_prim);
+    for (GLsizei draw = 0; draw < drawcount; ++draw) {
+        GLuint _count_draw = _glDrawArrays_count(first[draw], count[draw]);
+        _count = std::max(_count, _count_draw);
     }
     return _count;
 }
 
 static inline GLuint
-_glMultiDrawElements_count(const GLsizei *count, GLenum type, const GLvoid* *indices, GLsizei primcount) {
+_glMultiDrawElements_count(const GLsizei *count, GLenum type, const GLvoid* const *indices, GLsizei drawcount) {
     GLuint _count = 0;
-    for (GLsizei prim = 0; prim < primcount; ++prim) {
-        GLuint _count_prim = _glDrawElements_count(count[prim], type, indices[prim]);
-        _count = std::max(_count, _count_prim);
+    for (GLsizei draw = 0; draw < drawcount; ++draw) {
+        GLuint _count_draw = _glDrawElements_count(count[draw], type, indices[draw]);
+        _count = std::max(_count, _count_draw);
     }
     return _count;
 }
 
 static inline GLuint
-_glMultiDrawElementsBaseVertex_count(const GLsizei *count, GLenum type, const GLvoid* *indices, GLsizei primcount, const GLint * basevertex) {
+_glMultiDrawElementsBaseVertex_count(const GLsizei *count, GLenum type, const GLvoid* const *indices, GLsizei drawcount, const GLint * basevertex) {
     GLuint _count = 0;
-    for (GLsizei prim = 0; prim < primcount; ++prim) {
-        GLuint _count_prim = _glDrawElementsBaseVertex_count(count[prim], type, indices[prim], basevertex[prim]);
-        _count = std::max(_count, _count_prim);
+    for (GLsizei draw = 0; draw < drawcount; ++draw) {
+        GLuint _count_draw = _glDrawElementsBaseVertex_count(count[draw], type, indices[draw], basevertex[draw]);
+        _count = std::max(_count, _count_draw);
     }
     return _count;
 }
@@ -461,8 +490,8 @@ _glMultiDrawElementsBaseVertex_count(const GLsizei *count, GLenum type, const GL
 #define _glMultiDrawArraysEXT_count _glMultiDrawArrays_count
 #define _glMultiDrawElementsEXT_count _glMultiDrawElements_count
 
-#define _glMultiModeDrawArraysIBM_count(first, count, primcount, modestride) _glMultiDrawArrays_count(first, count, primcount)
-#define _glMultiModeDrawElementsIBM_count(count, type, indices, primcount, modestride) _glMultiDrawElements_count(count, type, (const GLvoid **)indices, primcount)
+#define _glMultiModeDrawArraysIBM_count(first, count, drawcount, modestride) _glMultiDrawArrays_count(first, count, drawcount)
+#define _glMultiModeDrawElementsIBM_count(count, type, indices, drawcount, modestride) _glMultiDrawElements_count(count, type, (const GLvoid **)indices, drawcount)
 
 
 static inline size_t
@@ -602,32 +631,36 @@ _align(X x, Y y) {
     return (x + (y - 1)) & ~(y - 1);
 }
 
-static inline size_t
-_gl_image_size(GLenum format, GLenum type, GLsizei width, GLsizei height, GLsizei depth, GLboolean has_unpack_subimage) {
+static inline void
+_gl_format_size(GLenum format, GLenum type,
+                unsigned & bits_per_element, unsigned & bits_per_pixel)
+{
     unsigned num_channels = _gl_format_channels(format);
 
-    unsigned bits_per_pixel;
     switch (type) {
     case GL_BITMAP:
-        bits_per_pixel = 1;
+        bits_per_pixel = bits_per_element = 1;
         break;
     case GL_BYTE:
     case GL_UNSIGNED_BYTE:
-        bits_per_pixel = 8 * num_channels;
+        bits_per_element = 8;
+        bits_per_pixel = bits_per_element * num_channels;
         break;
     case GL_SHORT:
     case GL_UNSIGNED_SHORT:
     case GL_HALF_FLOAT:
-        bits_per_pixel = 16 * num_channels;
+        bits_per_element = 16;
+        bits_per_pixel = bits_per_element * num_channels;
         break;
     case GL_INT:
     case GL_UNSIGNED_INT:
     case GL_FLOAT:
-        bits_per_pixel = 32 * num_channels;
+        bits_per_element = 32;
+        bits_per_pixel = bits_per_element * num_channels;
         break;
     case GL_UNSIGNED_BYTE_3_3_2:
     case GL_UNSIGNED_BYTE_2_3_3_REV:
-        bits_per_pixel = 8;
+        bits_per_pixel = bits_per_element = 8;
         break;
     case GL_UNSIGNED_SHORT_4_4_4_4:
     case GL_UNSIGNED_SHORT_4_4_4_4_REV:
@@ -637,7 +670,7 @@ _gl_image_size(GLenum format, GLenum type, GLsizei width, GLsizei height, GLsize
     case GL_UNSIGNED_SHORT_5_6_5_REV:
     case GL_UNSIGNED_SHORT_8_8_MESA:
     case GL_UNSIGNED_SHORT_8_8_REV_MESA:
-        bits_per_pixel = 16;
+        bits_per_pixel = bits_per_element = 16;
         break;
     case GL_UNSIGNED_INT_8_8_8_8:
     case GL_UNSIGNED_INT_8_8_8_8_REV:
@@ -648,16 +681,32 @@ _gl_image_size(GLenum format, GLenum type, GLsizei width, GLsizei height, GLsize
     case GL_UNSIGNED_INT_5_9_9_9_REV:
     case GL_UNSIGNED_INT_S8_S8_8_8_NV:
     case GL_UNSIGNED_INT_8_8_S8_S8_REV_NV:
-        bits_per_pixel = 32;
+        bits_per_pixel = bits_per_element = 32;
         break;
     case GL_FLOAT_32_UNSIGNED_INT_24_8_REV:
-        bits_per_pixel = 64;
+        bits_per_pixel = bits_per_element = 64;
         break;
     default:
         os::log("apitrace: warning: %s: unexpected type GLenum 0x%04X\n", __FUNCTION__, type);
-        bits_per_pixel = 0;
+        bits_per_pixel = bits_per_element = 0;
         break;
     }
+}
+
+static inline size_t
+_glClearBufferData_size(GLenum format, GLenum type) {
+    unsigned bits_per_element;
+    unsigned bits_per_pixel;
+    _gl_format_size(format, type, bits_per_element, bits_per_pixel);
+    return (bits_per_pixel + 7)/8;
+}
+
+static inline size_t
+_gl_image_size(GLenum format, GLenum type, GLsizei width, GLsizei height, GLsizei depth, GLboolean has_unpack_subimage) {
+
+    unsigned bits_per_element;
+    unsigned bits_per_pixel;
+    _gl_format_size(format, type, bits_per_element, bits_per_pixel);
 
     GLint alignment = 4;
     GLint row_length = 0;
@@ -681,9 +730,11 @@ _gl_image_size(GLenum format, GLenum type, GLsizei width, GLsizei height, GLsize
 
     size_t row_stride = (row_length*bits_per_pixel + 7)/8;
 
-    if ((GLint)bits_per_pixel < alignment*8 &&
-        (bits_per_pixel & 7) == 0 &&
-        _is_pot(bits_per_pixel)) {
+    if ((bits_per_element == 1*8 ||
+         bits_per_element == 2*8 ||
+         bits_per_element == 4*8 ||
+         bits_per_element == 8*8) &&
+        (GLint)bits_per_element < alignment*8) {
         row_stride = _align(row_stride, alignment);
     }
 

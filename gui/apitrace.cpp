@@ -230,7 +230,7 @@ bool ApiTrace::isSaving() const
 
 bool ApiTrace::hasErrors() const
 {
-    return !m_errors.isEmpty();
+    return !m_errors.isEmpty() || !m_queuedErrors.isEmpty();
 }
 
 void ApiTrace::loadFrame(ApiTraceFrame *frame)
@@ -393,6 +393,9 @@ void ApiTrace::loaderSearchResult(const ApiTrace::SearchRequest &request,
 
 void ApiTrace::findFrameStart(ApiTraceFrame *frame)
 {
+    if (!frame)
+        return;
+
     if (frame->isLoaded()) {
         emit foundFrameStart(frame);
     } else {
@@ -402,6 +405,9 @@ void ApiTrace::findFrameStart(ApiTraceFrame *frame)
 
 void ApiTrace::findFrameEnd(ApiTraceFrame *frame)
 {
+    if (!frame)
+        return;
+
     if (frame->isLoaded()) {
         emit foundFrameEnd(frame);
     } else {

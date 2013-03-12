@@ -65,14 +65,13 @@
     <addaction name="actionGo"/>
     <addaction name="actionGoFrameStart"/>
     <addaction name="actionGoFrameEnd"/>
-    <addaction name="separator"/>
-    <addaction name="actionShowErrorsDock"/>
    </widget>
    <widget class="QMenu" name="menu_Trace">
     <property name="title">
      <string>&amp;Trace</string>
     </property>
     <addaction name="actionReplay"/>
+    <addaction name="actionProfile"/>
     <addaction name="actionStop"/>
     <addaction name="actionLookupState"/>
     <addaction name="actionShowThumbnails"/>
@@ -80,8 +79,16 @@
     <addaction name="separator"/>
     <addaction name="actionOptions"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="actionShowErrorsDock"/>
+    <addaction name="actionShowProfileDialog"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menuView"/>
    <addaction name="menu_Trace"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -117,7 +124,7 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="url" stdset="0">
+       <property name="url">
         <url>
          <string>about:blank</string>
         </url>
@@ -486,9 +493,6 @@
    </property>
   </action>
   <action name="actionReplay">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="../qapitrace.qrc">
      <normaloff>:/resources/media-playback-start.png</normaloff>:/resources/media-playback-start.png</iconset>
@@ -501,9 +505,6 @@
    </property>
   </action>
   <action name="actionStop">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="../qapitrace.qrc">
      <normaloff>:/resources/media-playback-stop.png</normaloff>:/resources/media-playback-stop.png</iconset>
@@ -513,9 +514,6 @@
    </property>
   </action>
   <action name="actionLookupState">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="../qapitrace.qrc">
      <normaloff>:/resources/media-record.png</normaloff>:/resources/media-record.png</iconset>
@@ -528,9 +526,6 @@
    </property>
   </action>
   <action name="actionShowThumbnails">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="text">
     <string>Show &amp;Thumbnails</string>
    </property>
@@ -539,9 +534,6 @@
    </property>
   </action>
   <action name="actionTrim">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="text">
     <string>Tr&amp;im</string>
    </property>
@@ -560,7 +552,10 @@
      <normaloff>:/resources/document-new.png</normaloff>:/resources/document-new.png</iconset>
    </property>
    <property name="text">
-    <string>New</string>
+    <string>&amp;New...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="actionFind">
@@ -569,7 +564,7 @@
      <normaloff>:/resources/edit-find.png</normaloff>:/resources/edit-find.png</iconset>
    </property>
    <property name="text">
-    <string>Find</string>
+    <string>&amp;Find</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
@@ -619,7 +614,23 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Show Errors Dock</string>
+    <string>Show &amp;Errors Dock</string>
+   </property>
+  </action>
+  <action name="actionShowProfileDialog">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Show &amp;Profile Results</string>
+   </property>
+  </action>
+  <action name="actionProfile">
+   <property name="text">
+    <string>&amp;Profile</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
   <zorder>stateDock</zorder>
