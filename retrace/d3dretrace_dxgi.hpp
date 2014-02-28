@@ -47,7 +47,7 @@ namespace d3dretrace {
 
 class CDXGISwapChainDWM : public IDXGISwapChainDWM
 {
-private:
+public:
     IDXGISwapChain *m_pSwapChain;
 
 public:
